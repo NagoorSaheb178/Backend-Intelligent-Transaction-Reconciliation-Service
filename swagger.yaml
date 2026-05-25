@@ -1,0 +1,102 @@
+openapi: 3.0.3
+info:
+  title: KoinX Reconciliation API
+  version: 1.0.0
+servers:
+  - url: http://localhost:{port}
+    description: Local development server
+    variables:
+      port:
+        default: "3000"
+paths:
+  /api/reconcile:
+    post:
+      summary: Ingest CSV files and run reconciliation
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - userFile
+                - exchangeFile
+              properties:
+                userFile:
+                  type: string
+                  format: binary
+                  description: User transactions CSV file
+                exchangeFile:
+                  type: string
+                  format: binary
+                  description: Exchange transactions CSV file
+                timestampToleranceSeconds:
+                  type: integer
+                  description: Optional timestamp tolerance in seconds
+                quantityTolerancePct:
+                  type: number
+                  description: Optional quantity tolerance percentage
+      responses:
+        '200':
+          description: Reconciliation summary
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Bad request
+        '500':
+          description: Server error
+  /api/report/{runId}/summary:
+    get:
+      summary: Get run summary statistics
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Summary object
+        '404':
+          description: Run not found
+  /api/report/{runId}/unmatched:
+    get:
+      summary: List unmatched or invalid transactions
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Paginated list
+  /api/report/{runId}:
+    get:
+      summary: Download reconciliation report as CSV
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
